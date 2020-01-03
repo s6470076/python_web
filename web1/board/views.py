@@ -3,12 +3,67 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db import connection
 from base64 import b64encode
+import pandas as pd
 #byte 배열을 base64로 변경함
 
 cursor = connection.cursor()#sql문 수행위한 cursor 객체
 
 
+@csrf_exempt  
+def dataframe(request):
+    if request.method == 'GET':
+        df = pd.read_sql("""
+        SELECT NO, WRITER, HIT, REGDATE
+        FROM BOARD_TABLE1
+        """, con=connection)
+        print(df)
+        print(df['NO'])
+        print(type(df))
+        return render(request, 'board/dataframe.html',{"df":df.to_html(classes="table")}) 
 
+
+
+
+@csrf_exempt  
+def edit(request):
+    if request.method == 'GET': 
+        no = request.GET.get('no', 0) 
+
+        sql = """
+            SELECT NO, TITLE, CONTENT
+            FROM BOARD_TABLE1
+            WHERE NO=%s
+       """        
+        cursor.execute(sql,[no]) 
+        data = cursor.fetchone()
+        return render(request,'board/edit.html',{"one":data})
+
+    elif request.method == 'POST':
+        no = request.POST['no']
+        ti = request.POST['title']
+        co = request.POST['content']
+
+        arr=[ti,co,no]
+        sql="""
+            UPDATE BOARD_TABLE1 SET TITLE=%s,
+            CONTENT=%s WHERE NO=%s
+        
+        """
+        cursor.execute(sql,arr) 
+        return redirect("/board/content?no="+no)
+
+
+@csrf_exempt  
+def delete(request):
+    if request.method == 'GET': 
+        no = request.GET.get('no',0)
+        sql = """
+        DELETE FROM BOARD_TABLE1
+        WHERE NO=%s
+        """
+
+        cursor.execute(sql,[no]) 
+        return redirect("/board/list")  #<a href와 같음
 
 @csrf_exempt  
 def content(request):
