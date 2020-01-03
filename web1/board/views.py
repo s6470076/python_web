@@ -2,6 +2,8 @@ from django.shortcuts import render,redirect
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db import connection
+from base64 import b64encode
+#byte 배열을 base64로 변경함
 
 cursor = connection.cursor()#sql문 수행위한 cursor 객체
 
@@ -24,13 +26,33 @@ def content(request):
             '''
             cursor.execute(sql, [no])
             request.session['hit'] = 0
+       
+        #이전글 번호 가져오기
+        sql = '''
+            SELECT NVL(MAX(NO),0)
+            FROM BOARD_TABLE1 
+            WHERE NO < %s
+        
+        '''
+        cursor.execute(sql, [no])
+        prev = cursor.fetchone()
+
+        #다음글 번호 가져오기
+        sql = '''
+            SELECT NVL(MIN(NO),0)
+            FROM BOARD_TABLE1 
+            WHERE NO > %s
+        
+        '''
+        cursor.execute(sql, [no])
+        next = cursor.fetchone()
         
         
         sql = """
             SELECT 
                 NO, TITLE,CONTENT, WRITER, 
                 HIT, 
-                TO_CHAR(REGDATE, 'YYYY-MM-DD HH:MI:SS') 
+                TO_CHAR(REGDATE, 'YYYY-MM-DD HH:MI:SS'),IMG 
             FROM 
                 BOARD_TABLE1
             WHERE
@@ -38,9 +60,20 @@ def content(request):
         """
         cursor.execute(sql, [no])
         data = cursor.fetchone()  # (1,2,3,4,5,6)
-        print(no)
+
+
+        if data[6] : #db에서 BLOB로 있는 경우
+            img=data[6].read()
+            img64=b64encode(img).decode('utf-8')
+
+        else: #없는 경우
+            file = open('./static/img/no_image.png','rb')
+            img=file.read()
+            img64=b64encode(img).decode('utf-8')
+
+        #print(no)
         return render(request, 'board/content.html',
-             {"one":data}) 
+             {"one":data, "image":img64, "prev":prev[0], "next":next[0]}) 
 
 
 
@@ -65,12 +98,17 @@ def write(request):
     if request.method == 'GET':
         return render(request, "board/write.html")
     elif request.method == "POST":
-        img = request.FILES['img'] #name값 img
+        tmp = None
+        if 'img' in request.FILES:
+            img = request.FILES['img']
+            tmp = img.read() 
+
         arr = [
             request.POST['title'],
             request.POST['content'],
             request.POST['writer'],
-            img.read() #이미지를 byte[]로 변경
+            tmp
+      
         ]
         try :
             #print (arr)
