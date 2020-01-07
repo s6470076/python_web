@@ -2,8 +2,164 @@ from django.shortcuts import render,redirect
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db import connection
+from django.contrib.auth.models import User 
+from django.contrib.auth import login as login1
+from django.contrib.auth import logout as logout1 
+from django.contrib.auth import authenticate as auth1
 
+from .models import Table2
 cursor=connection.cursor()
+
+
+
+
+# -> 작성하려면 -> 화면생각 ->views-> 함수 틀 -> render-> urls.py -> views
+@csrf_exempt
+def exam_insert(request):
+    if request.method == "GET":
+        return render(request,"member/exam_insert.html", {"cnt":range(20)})
+    
+    elif request.method == "POST":
+        na = request.POST.getlist('name[]')
+        ko = request.POST.getlist('kor[]')
+        en = request.POST.getlist('eng[]')
+        ma = request.POST.getlist('math[]')
+        classroom = request.POST.getlist('classroom[]')
+
+        objs = []
+        for i in range(0, len(na), 1):        
+            obj = Table2()
+            obj.name = na[i]
+            obj.kor = ko[i]
+            obj.eng = en[i]
+            obj.math = ma[i]
+            obj.classroom = classroom[i]
+            objs.append(obj)
+
+        Table2.objects.bulk_create(objs)
+        return redirect("/member/exam_insert")
+ 
+ 
+ 
+'''
+    elif request.method == "POST":
+
+        
+        obj = Table2()
+        obj.name = request.POST["name"]
+        obj.kor = request.POST["kor"]
+        obj.eng = request.POST["eng"]
+        obj.math = request.POST["math"]
+        obj.classroom = request.POST["classroom"]
+        obj.save()
+
+        
+        return redirect("/member/exam_insert")
+'''
+        
+
+
+def exam_select(request):
+    pass
+
+def exam_update(request):
+    pass
+
+def exam_delete(request):
+    pass
+
+
+
+
+
+@csrf_exempt 
+def auth_pw(request):
+    if request.method == 'GET':
+        if not request.user.is_authenticated:
+            return redirect("/member/auth_login")
+        return render(request,'member/auth_pw.html')
+    elif request.method == 'POST':
+        pw = request.POST['pw']
+        pw1 = request.POST['pw1']
+        obj = auth1(request,username=request.user,password=pw)
+        if obj:
+            obj.set_password(pw1)
+            obj.save()
+            return redirect("/member/auth_index")
+        return redirect('/member/auth_pw')
+
+
+@csrf_exempt 
+def auth_edit(request):
+    if request.method == 'GET':
+        if not request.user.is_authenticated:
+            return redirect("/member/auth_login")              
+        obj = User.objects.get(username=request.user)
+        return render(request,'member/auth_edit.html',{'obj':obj})
+    
+    elif request.method == 'POST':
+        id = request.POST['username']
+        na = request.POST['first_name']
+        em = request.POST['email']
+        
+        obj = User.objects.get(username=id)
+        obj.first_name = na
+        obj.email = em
+        obj.save()
+        return redirect('/member/auth_index')
+
+
+@csrf_exempt 
+def auth_logout(request):
+    if request.method == 'GET' or request.method == 'POST':
+        logout1(request)#세션초기화
+        return render(request,'member/auth_login.html')
+
+
+@csrf_exempt 
+def auth_login(request):
+    if request.method == 'GET' :
+        return render(request,'member/auth_login.html')
+    elif request.method == 'POST':
+        id = request.POST['username']
+        pw = request.POST['password']
+
+        obj = auth1(request, username=id, password=pw)
+
+        if obj: 
+            login1(request, obj)
+            return redirect("/member/auth_index")
+
+        return redirect("/member/auth_login")
+
+@csrf_exempt 
+def auth_index(request):
+    if request.method == 'GET' :
+        return render(request,'member/auth_index.html')
+    
+
+
+@csrf_exempt 
+def auth_join(request):
+    if request.method == 'GET' :
+        return render(request,'member/auth_join.html')
+    elif request.method == 'POST':
+        id = request.POST['username']
+        pw = request.POST['password']
+        na = request.POST['first_name']
+        em = request.POST['email']
+
+        obj = User.objects.create_user(
+            username=id,
+            password=pw,
+            first_name=na,
+            email=em)
+
+        obj.save()
+
+        return redirect("/member/auth_index")
+
+##############################################################################
 
 @csrf_exempt 
 def delete(request):
