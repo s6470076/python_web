@@ -6,7 +6,7 @@ from base64 import b64encode
 import pandas as pd
 cursor = connection.cursor() #sql문 수행위한 cursor객체
 
-
+from .models import Table1
 from .models import Table2 #models.py파일의 Table2클래스
 
 def t2_update_all(request):
@@ -234,7 +234,7 @@ def content(request):
             img = data[6].read() # 바이트배열을 img에 넣음
             img64 = b64encode(img).decode("utf-8")
         else : # 없는 경우
-            file = open('./static/img/default.jpg', 'rb')
+            file = open('./static/img/no_image.png', 'rb')
             img = file.read()
             img64 = b64encode(img).decode("utf-8")
 
@@ -243,25 +243,49 @@ def content(request):
              {"one":data, "image":img64, 
              "prev":prev[0], "next":next[0]}) 
 
-
+  
 @csrf_exempt  
 def list(request):
     if request.method == 'GET':
         request.session['hit'] = 1  #세션에 hit=1
+        
+        txt  = request.GET.get("txt","")
+        page = int(request.GET.get("page", 1)) #페이지가 없을 수는 없으니까 1을 page에 준다
+        arr = [ '%'+txt+'%', page*10-10+1, page*10 ]
+        print(arr)
+        
         sql = """
-            SELECT 
-                NO, TITLE, WRITER, 
-                HIT, TO_CHAR(REGDATE, 'YYYY-MM-DD HH:MI:SS') 
-            FROM 
-                BOARD_TABLE1
-            ORDER BY NO DESC
+            SELECT * FROM (
+                SELECT 
+                    NO, TITLE, WRITER, 
+                    HIT, TO_CHAR(REGDATE, 'YYYY-MM-DD HH:MI:SS'), 
+                    ROW_NUMBER() OVER (ORDER BY NO DESC) ROWN 
+                FROM 
+                    BOARD_TABLE1
+                WHERE TITLE LIKE %s
+            )
+            WHERE ROWN BETWEEN %s AND %s 
         """
-        cursor.execute(sql)
+        cursor.execute(sql, arr)
         data = cursor.fetchall()
-        print( type(data) ) 
-        print( data )        #[(    ),(    ) ]
-        return render(request, 'board/list.html'
-                            , {"abc":data}) 
+
+        """
+        cnt = Table1.objects.all().count()
+        tot = (cnt-1)//10+1
+        """
+
+
+        arr1 = [ '%'+txt+'%' ]   
+        
+        sql = """
+            SELECT COUNT(*) FROM BOARD_TABLE1 WHERE TITLE LIKE %s
+            """
+        
+        cursor.execute(sql, arr1)
+        cnt = cursor.fetchone()[0]
+        tot = (cnt-1)//10+1
+
+        return render(request, 'board/list.html', {"abc":data, "pages": range(1, (tot+1), 1)}) 
 
 
 @csrf_exempt  

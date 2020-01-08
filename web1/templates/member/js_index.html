@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <!-- include libraries(jQuery, bootstrap) -->
+<link href="https://stackpath.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+<!-- include summernote css/js -->
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.15/dist/summernote.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.15/dist/summernote.min.js"></script>
+</head>
+<body>
+    <h3>js_index</h3>
+    <form action = "/member/insert" method = "post" id='form'>
+        <input type='txte' name="name" id="name"/>
+        <input type='submit' value="추가" />
+        <input type='submit' id = "btn_delete" value="삭제" />
+    </form>
+
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+
+    <script>
+        $(function(){
+            $('#name').val('쨘')                             `##name이라는 id를 찾아서 쨘으로 바꾼다`
+            
+            $('#btn_delete').click(function(){
+                $('#form').attr('action', '/member/delete')  `##btn_delete이라는 버튼을 찾아서 동작한다`
+            })
+        })
+    </script>    
+
+
+</body>
+</html>
