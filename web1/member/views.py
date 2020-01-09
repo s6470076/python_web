@@ -57,11 +57,11 @@ def graph(request):
     print(sum_kor.query) #SQL문 확인 
 
     #-----------------------------------------------------------내가 만든 부분
-    avg_kor = Table2.objects.aggregate(avg1= Avg("kor"))
+    avg_kor = Table2.objects.aggregate(avg1= Avg("kor")) #aggregate->딕셔너리
     print(avg_kor['avg1'])
  
 
-    avg_kor = Table2.objects.values("classroom").annotate(avg1= Avg("kor"))
+    avg_kor = Table2.objects.values("classroom").annotate(avg1= Avg("kor")) #annotate은 프롬포트에서 QuerySet로 받는다
     print(avg_kor)
     print(avg_kor[0]['avg1'])
     print(Table2.objects.values('classroom')) 
